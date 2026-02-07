@@ -1,16 +1,24 @@
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: twitch-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+
   twitch-gateway:
     build:
-      context: ./twitch-gateway
+      context: ./twitch_gateway
     container_name: twitch-gateway
     restart: unless-stopped
     environment:
-      # Twitch
+      # Twitch IRC
       - TWITCH_NICK=${TWITCH_NICK}
       - TWITCH_OAUTH=${TWITCH_OAUTH}          # формат: oauth:xxxxxxxxxxxx
       - TWITCH_CHANNELS=${TWITCH_CHANNELS}    # например: "mychannel,otherchannel"
 
-      # Redis (у тебя сервис называется redis в этой сети)
+      # Redis
       - REDIS_URL=redis://redis:6379/0
 
       # Streams
@@ -19,16 +27,35 @@ services:
       - REDIS_CONSUMER_GROUP=twitch-gateway
       - REDIS_CONSUMER_NAME=gateway-1
 
-      # Rate limit (по умолчанию twitch 20/30s)
+      # Rate limit (twitch обычно 20/30s)
       - RATE_LIMIT_COUNT=20
       - RATE_LIMIT_WINDOW_SEC=30
 
-      # Логи
       - LOG_LEVEL=INFO
+    depends_on:
+      - redis
 
-    networks:
-      - supabase_n8n_network
+  ai-chat-brain:
+    build:
+      context: ./ai_chat_brain
+    container_name: ai-chat-brain
+    restart: unless-stopped
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - REDIS_STREAM_IN=twitch:in
+      - REDIS_STREAM_OUT=twitch:out
+      - REDIS_CONSUMER_GROUP_IN=ai-brain
+      - REDIS_CONSUMER_NAME_IN=brain-1
 
-networks:
-  supabase_n8n_network:
-    external: true
+      # Логика brain (пока заглушки)
+      - BOT_NICK=${BOT_NICK}
+      - CHANNEL_ALLOWLIST=${CHANNEL_ALLOWLIST}  # "" => слушать все каналы из входящих
+      - BANWORDS=${BANWORDS}
+      - MIN_TEXT_LEN=3
+      - BATCH_SEC=45
+      - SPEAK_EVERY_SEC=180
+      - MAX_OUT_LEN=350
+
+      - LOG_LEVEL=INFO
+    depends_on:
+      - redis

@@ -5,8 +5,8 @@ import logging
 import random
 import time
 
-from .config import Settings
-from .irc import TwitchIrcClient, IrcMessage
+from .models import Settings, IrcMessage
+from .irc import TwitchIrcClient
 from .redis_bus import RedisBus
 from .rate_limit import TokenBucket
 
