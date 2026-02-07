@@ -1,0 +1,34 @@
+services:
+  twitch-gateway:
+    build:
+      context: ./twitch-gateway
+    container_name: twitch-gateway
+    restart: unless-stopped
+    environment:
+      # Twitch
+      - TWITCH_NICK=${TWITCH_NICK}
+      - TWITCH_OAUTH=${TWITCH_OAUTH}          # формат: oauth:xxxxxxxxxxxx
+      - TWITCH_CHANNELS=${TWITCH_CHANNELS}    # например: "mychannel,otherchannel"
+
+      # Redis (у тебя сервис называется redis в этой сети)
+      - REDIS_URL=redis://redis:6379/0
+
+      # Streams
+      - REDIS_STREAM_IN=twitch:in
+      - REDIS_STREAM_OUT=twitch:out
+      - REDIS_CONSUMER_GROUP=twitch-gateway
+      - REDIS_CONSUMER_NAME=gateway-1
+
+      # Rate limit (по умолчанию twitch 20/30s)
+      - RATE_LIMIT_COUNT=20
+      - RATE_LIMIT_WINDOW_SEC=30
+
+      # Логи
+      - LOG_LEVEL=INFO
+
+    networks:
+      - supabase_n8n_network
+
+networks:
+  supabase_n8n_network:
+    external: true
