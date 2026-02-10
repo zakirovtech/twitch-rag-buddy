@@ -2,7 +2,14 @@
 import os, json, secrets
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse, urlencode
+from pathlib import Path
+from dotenv import load_dotenv
 import requests
+
+load_dotenv()
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+TWITCH_GATEWAY_DIR = BASE_DIR / "twitch_gateway"
 
 CLIENT_ID = os.environ["TWITCH_APP_CLIENT_ID"]
 CLIENT_SECRET = os.environ["TWITCH_APP_CLIENT_SECRET"]
@@ -57,7 +64,7 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         tokens = exchange_code(code)
-        with open("tokens.json", "w", encoding="utf-8") as f:
+        with open(TWITCH_GATEWAY_DIR, "w", encoding="utf-8") as f:
             json.dump(tokens, f, ensure_ascii=False, indent=2)
 
         self.send_response(200); self.end_headers()

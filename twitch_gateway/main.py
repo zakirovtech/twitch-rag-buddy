@@ -7,6 +7,7 @@ import time
 
 from .models import Settings, IrcMessage
 from .irc import TwitchIrcClient
+from .token_manager import TwitchTokenManager, TokenError
 from .redis_bus import RedisBus
 from .rate_limit import TokenBucket
 

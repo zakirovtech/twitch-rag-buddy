@@ -1,10 +1,8 @@
 services:
-  redis:
+  twitch-redis:
     image: redis:7-alpine
     container_name: twitch-redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
     command: ["redis-server", "--save", "", "--appendonly", "no"]
 
   twitch-gateway:
@@ -33,9 +31,11 @@ services:
 
       - LOG_LEVEL=INFO
     depends_on:
-      - redis
+      - twitch-redis
+    networks:
+      - supabase_n8n_network
 
-  ai-chat-brain:
+  twitch-ai-chat-brain:
     build:
       context: ./ai_chat_brain
     container_name: ai-chat-brain
@@ -58,4 +58,10 @@ services:
 
       - LOG_LEVEL=INFO
     depends_on:
-      - redis
+      - twitch-redis
+    networks:
+      - supabase_n8n_network
+
+networks:
+  supabase_n8n_network:
+    external: true

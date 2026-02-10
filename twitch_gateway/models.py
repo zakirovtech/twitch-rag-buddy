@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+import os
+
 from config import _env
 
 
@@ -15,8 +17,15 @@ class IrcMessage:
 @dataclass(frozen=True)
 class Settings:
     twitch_nick: str
-    twitch_oauth: str
+    # If TWITCH_TOKEN_FILE is used, oauth may be omitted.
+    twitch_oauth: str | None
     twitch_channels: list[str]
+
+    # Token-file / refresh (optional, recommended)
+    twitch_token_file: str | None
+    twitch_app_client_id: str | None
+    twitch_app_client_secret: str | None
+    token_min_ttl_sec: int
 
     redis_url: str
     stream_in: str
@@ -33,14 +42,27 @@ class Settings:
     def load() -> "Settings":
         channels_raw = _env("TWITCH_CHANNELS")
         channels = [c.strip().lstrip("#") for c in channels_raw.split(",") if c.strip()]
-        
         if not channels:
             raise ValueError("TWITCH_CHANNELS is empty")
 
+        token_file = os.getenv("TWITCH_TOKEN_FILE", "").strip() or None
+        oauth = os.getenv("TWITCH_OAUTH", "").strip() or None
+        if not oauth and not token_file:
+            raise ValueError("Provide TWITCH_OAUTH or TWITCH_TOKEN_FILE")
+
+        client_id = os.getenv("TWITCH_APP_CLIENT_ID", "").strip() or None
+        client_secret = os.getenv("TWITCH_APP_CLIENT_SECRET", "").strip() or None
+        if token_file and (not client_id or not client_secret):
+            raise ValueError("TWITCH_TOKEN_FILE requires TWITCH_APP_CLIENT_ID and TWITCH_APP_CLIENT_SECRET")
+
         return Settings(
             twitch_nick=_env("TWITCH_NICK"),
-            twitch_oauth=_env("TWITCH_OAUTH"),
+            twitch_oauth=oauth,
             twitch_channels=channels,
+            twitch_token_file=token_file,
+            twitch_app_client_id=client_id,
+            twitch_app_client_secret=client_secret,
+            token_min_ttl_sec=int(os.getenv("TWITCH_TOKEN_MIN_TTL_SEC", "120")),
             redis_url=_env("REDIS_URL", "redis://redis:6379/0"),
             stream_in=_env("REDIS_STREAM_IN", "twitch:in"),
             stream_out=_env("REDIS_STREAM_OUT", "twitch:out"),
