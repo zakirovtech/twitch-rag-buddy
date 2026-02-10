@@ -137,10 +137,35 @@ async def irc_loop(settings: Settings) -> None:
     )
     await bus.connect()
 
+    token_mgr: TwitchTokenManager | None = None
+    if settings.twitch_token_file:
+        token_mgr = TwitchTokenManager(
+            token_file=settings.twitch_token_file,
+            client_id=settings.twitch_app_client_id or "",
+            client_secret=settings.twitch_app_client_secret or "",
+            expected_login=settings.twitch_nick,
+            min_ttl_sec=settings.token_min_ttl_sec,
+        )
+
+    def _pick_oauth(force_refresh: bool = False) -> str:
+        # 1) prefer tokens.json if configured
+        if token_mgr is not None:
+            return token_mgr.get_irc_pass(force_refresh=force_refresh)
+
+        # 2) fallback to env
+        if not settings.twitch_oauth:
+            raise TokenError("No TWITCH_OAUTH and no TWITCH_TOKEN_FILE")
+        return settings.twitch_oauth
+
     backoff = 1.0
     while True:
-        irc = TwitchIrcClient(settings.twitch_nick, settings.twitch_oauth)
+        irc: TwitchIrcClient | None = None
+        sender_task: asyncio.Task | None = None
+
         try:
+            oauth = _pick_oauth(force_refresh=False)
+            irc = TwitchIrcClient(settings.twitch_nick, oauth)
+
             await irc.connect()
 
             for ch in settings.twitch_channels:
@@ -148,27 +173,54 @@ async def irc_loop(settings: Settings) -> None:
                 log.info("Joined #%s", ch)
 
             backoff = 1.0  # reset after successful connect
-
             sender_task = asyncio.create_task(outgoing_sender(irc, bus, settings))
 
             async for msg in irc.lines():
+                # Detect auth failure reported by Twitch after PASS/NICK
+                if msg.command == "NOTICE":
+                    t = (msg.trailing or "").lower()
+                    if "authentication failed" in t or "login authentication failed" in t or "invalid oauth token" in t:
+                        raise TokenError(msg.trailing or "Authentication failed")
+
                 await handle_incoming(bus, msg)
 
         except asyncio.CancelledError:
             raise
+
+        except TokenError as e:
+            log.warning("Auth/token error: %s", e)
+
+            # Try refresh if possible, then reconnect quickly
+            if token_mgr is not None:
+                try:
+                    _ = _pick_oauth(force_refresh=True)  # refresh + persist tokens.json
+                    backoff = 1.0
+                except Exception as re:
+                    log.error("Token refresh failed: %s", re)
+
         except Exception as e:
             log.warning("IRC connection error: %s", e)
+
         finally:
-            try:
-                await irc.close()
-            except Exception:
-                pass
+            if sender_task is not None:
+                sender_task.cancel()
+                try:
+                    await sender_task
+                except Exception:
+                    pass
+
+            if irc is not None:
+                try:
+                    await irc.close()
+                except Exception:
+                    pass
 
         # reconnect with jitter
         sleep_for = backoff + random.random()
         log.info("Reconnecting in %.1fs", sleep_for)
         await asyncio.sleep(sleep_for)
         backoff = min(backoff * 2, 60.0)
+
 
 
 def main() -> None:

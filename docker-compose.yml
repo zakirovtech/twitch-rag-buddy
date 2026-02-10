@@ -10,14 +10,16 @@ services:
       context: ./twitch_gateway
     container_name: twitch-gateway
     restart: unless-stopped
+    volumes:
+      - ./twitch_gateway/tokens.json:/app/tokens.json:rw
     environment:
       # Twitch IRC
       - TWITCH_NICK=${TWITCH_NICK}
-      - TWITCH_OAUTH=${TWITCH_OAUTH}          # формат: oauth:xxxxxxxxxxxx
-      - TWITCH_CHANNELS=${TWITCH_CHANNELS}    # например: "mychannel,otherchannel"
+      - TWITCH_OAUTH=${TWITCH_OAUTH}
+      - TWITCH_CHANNELS=${TWITCH_CHANNELS}
 
       # Redis
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://twitch-redis:6379/0
 
       # Streams
       - REDIS_STREAM_IN=twitch:in
@@ -41,7 +43,7 @@ services:
     container_name: ai-chat-brain
     restart: unless-stopped
     environment:
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://twitch-redis:6379/0
       - REDIS_STREAM_IN=twitch:in
       - REDIS_STREAM_OUT=twitch:out
       - REDIS_CONSUMER_GROUP_IN=ai-brain
@@ -55,8 +57,10 @@ services:
       - BATCH_SEC=45
       - SPEAK_EVERY_SEC=180
       - MAX_OUT_LEN=350
-
       - LOG_LEVEL=INFO
+      
+      - OLLAMA_URL=http://ollama:11434
+      - OLLAMA_MODEL=llama3.1:8b
     depends_on:
       - twitch-redis
     networks:

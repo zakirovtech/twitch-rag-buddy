@@ -4,7 +4,7 @@ import asyncio
 import ssl
 from typing import AsyncIterator
 
-from models import IrcMessage
+from .models import IrcMessage
 
 
 def parse_irc_line(line: str) -> IrcMessage:
