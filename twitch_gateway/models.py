@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import os
 
-from config import _env
+from .config import _env
 
 
 @dataclass

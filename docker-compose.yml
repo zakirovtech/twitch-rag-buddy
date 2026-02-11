@@ -4,6 +4,8 @@ services:
     container_name: twitch-redis
     restart: unless-stopped
     command: ["redis-server", "--save", "", "--appendonly", "no"]
+    networks:
+      - supabase_n8n_network
 
   twitch-gateway:
     build:
@@ -15,23 +17,27 @@ services:
     environment:
       # Twitch IRC
       - TWITCH_NICK=${TWITCH_NICK}
-      - TWITCH_OAUTH=${TWITCH_OAUTH}
+      - TWITCH_OAUTH=${TWITCH_OAUTH} # backoff (delete later)
       - TWITCH_CHANNELS=${TWITCH_CHANNELS}
+      - TWITCH_TOKEN_FILE=${TWITCH_TOKEN_FILE}
+      - TWITCH_APP_CLIENT_ID=${TWITCH_APP_CLIENT_ID}
+      - TWITCH_APP_CLIENT_SECRET=${TWITCH_APP_CLIENT_SECRET}
+      - TWITCH_TOKEN_MIN_TTL_SEC=${TWITCH_TOKEN_MIN_TTL_SEC}
 
       # Redis
-      - REDIS_URL=redis://twitch-redis:6379/0
+      - REDIS_URL=${REDIS_URL}
 
       # Streams
-      - REDIS_STREAM_IN=twitch:in
-      - REDIS_STREAM_OUT=twitch:out
-      - REDIS_CONSUMER_GROUP=twitch-gateway
-      - REDIS_CONSUMER_NAME=gateway-1
+      - REDIS_STREAM_IN=${REDIS_STREAM_IN}
+      - REDIS_STREAM_OUT=${REDIS_STREAM_OUT}
+      - REDIS_CONSUMER_GROUP=${REDIS_CONSUMER_GROUP}
+      - REDIS_CONSUMER_NAME=${REDIS_CONSUMER_NAME}
 
       # Rate limit (twitch обычно 20/30s)
-      - RATE_LIMIT_COUNT=20
-      - RATE_LIMIT_WINDOW_SEC=30
+      - RATE_LIMIT_COUNT=${RATE_LIMIT_COUNT}
+      - RATE_LIMIT_WINDOW_SEC=${RATE_LIMIT_WINDOW_SEC}
 
-      - LOG_LEVEL=INFO
+      - LOG_LEVEL=${LOG_LEVEL}
     depends_on:
       - twitch-redis
     networks:
@@ -43,24 +49,24 @@ services:
     container_name: ai-chat-brain
     restart: unless-stopped
     environment:
-      - REDIS_URL=redis://twitch-redis:6379/0
-      - REDIS_STREAM_IN=twitch:in
-      - REDIS_STREAM_OUT=twitch:out
-      - REDIS_CONSUMER_GROUP_IN=ai-brain
-      - REDIS_CONSUMER_NAME_IN=brain-1
+      - REDIS_URL=${REDIS_URL}
+      - REDIS_STREAM_IN=${REDIS_STREAM_IN}
+      - REDIS_STREAM_OUT=${REDIS_STREAM_OUT}
+      - REDIS_CONSUMER_GROUP_IN=${REDIS_CONSUMER_GROUP_IN}
+      - REDIS_CONSUMER_NAME_IN=${REDIS_CONSUMER_NAME_IN}
 
       # Логика brain (пока заглушки)
       - BOT_NICK=${BOT_NICK}
       - CHANNEL_ALLOWLIST=${CHANNEL_ALLOWLIST}  # "" => слушать все каналы из входящих
       - BANWORDS=${BANWORDS}
-      - MIN_TEXT_LEN=3
-      - BATCH_SEC=45
-      - SPEAK_EVERY_SEC=180
-      - MAX_OUT_LEN=350
-      - LOG_LEVEL=INFO
+      - MIN_TEXT_LEN=${MIN_TEXT_LEN}
+      - BATCH_SEC=${BATCH_SEC}
+      - SPEAK_EVERY_SEC=${SPEAK_EVERY_SEC}
+      - MAX_OUT_LEN=${MAX_OUT_LEN}
+      - LOG_LEVEL=${LOG_LEVEL}
       
-      - OLLAMA_URL=http://ollama:11434
-      - OLLAMA_MODEL=llama3.1:8b
+      - OLLAMA_URL=${OLLAMA_URL}
+      - OLLAMA_MODEL=${OLLAMA_MODEL}
     depends_on:
       - twitch-redis
     networks:

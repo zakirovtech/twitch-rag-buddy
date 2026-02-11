@@ -1,15 +1,16 @@
-# oauth_local.py
 import os, json, secrets
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse, urlencode
 from pathlib import Path
 from dotenv import load_dotenv
-import requests
 
-load_dotenv()
+import requests
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 TWITCH_GATEWAY_DIR = BASE_DIR / "twitch_gateway"
+
+# Для локального запуска нужно подгрузить в окружение
+load_dotenv(BASE_DIR / ".env")
 
 CLIENT_ID = os.environ["TWITCH_APP_CLIENT_ID"]
 CLIENT_SECRET = os.environ["TWITCH_APP_CLIENT_SECRET"]
@@ -32,6 +33,7 @@ def build_auth_url():
     }
     return f"{AUTH_URL}?{urlencode(params)}"
 
+
 def exchange_code(code: str):
     data = {
         "client_id": CLIENT_ID,
@@ -40,9 +42,12 @@ def exchange_code(code: str):
         "grant_type": "authorization_code",
         "redirect_uri": REDIRECT_URI,
     }
+    
     r = requests.post(TOKEN_URL, data=data, timeout=15)
     r.raise_for_status()
+    
     return r.json()
+
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
