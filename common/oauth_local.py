@@ -1,6 +1,6 @@
 import os, json, secrets
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from urllib.parse import urlparse, urlencode
+from urllib.parse import urlparse, urlencode, parse_qs
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -52,7 +52,6 @@ def exchange_code(code: str):
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         # ожидаем /oauth/twitch/callback?code=...&state=...
-        from urllib.parse import urlparse, parse_qs
         q = urlparse(self.path)
         qs = parse_qs(q.query)
 
@@ -69,7 +68,7 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         tokens = exchange_code(code)
-        with open(TWITCH_GATEWAY_DIR, "w", encoding="utf-8") as f:
+        with open(TWITCH_GATEWAY_DIR / "tokens.json", "w", encoding="utf-8") as f:
             json.dump(tokens, f, ensure_ascii=False, indent=2)
 
         self.send_response(200); self.end_headers()
