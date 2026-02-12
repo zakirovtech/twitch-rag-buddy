@@ -55,9 +55,9 @@ services:
       - REDIS_CONSUMER_GROUP_IN=${REDIS_CONSUMER_GROUP_IN}
       - REDIS_CONSUMER_NAME_IN=${REDIS_CONSUMER_NAME_IN}
 
-      # Логика brain (пока заглушки)
+      # Логика brain
       - BOT_NICK=${BOT_NICK}
-      - CHANNEL_ALLOWLIST=${CHANNEL_ALLOWLIST}  # "" => слушать все каналы из входящих
+      - CHANNEL_ALLOWLIST=${CHANNEL_ALLOWLIST}
       - BANWORDS=${BANWORDS}
       - MIN_TEXT_LEN=${MIN_TEXT_LEN}
       - BATCH_SEC=${BATCH_SEC}
@@ -67,6 +67,14 @@ services:
       
       - OLLAMA_URL=${OLLAMA_URL}
       - OLLAMA_MODEL=${OLLAMA_MODEL}
+      - OLLAMA_TEMPERATURE=${OLLAMA_TEMPERATURE}
+      - OLLAMA_NUM_CTX=${OLLAMA_NUM_CTX}
+      - OLLAMA_NUM_PREDICT=${OLLAMA_NUM_PREDICT}
+      - OLLAMA_TOP_P=${OLLAMA_TOP_P}
+      - OLLAMA_REPEAT_PENALTY=${OLLAMA_REPEAT_PENALTY}
+      - OLLAMA_FORCE_RU=${OLLAMA_FORCE_RU}
+      - OLLAMA_RETRY_NON_RU=${OLLAMA_RETRY_NON_RU}
+      - OLLAMA_TIMEOUT_SEC=${OLLAMA_TIMEOUT_SEC}
     depends_on:
       - twitch-redis
     networks:

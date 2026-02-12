@@ -22,6 +22,7 @@ TOKEN_URL = "https://id.twitch.tv/oauth2/token"
 
 STATE = secrets.token_urlsafe(24)
 
+
 def build_auth_url():
     params = {
         "client_id": CLIENT_ID,
