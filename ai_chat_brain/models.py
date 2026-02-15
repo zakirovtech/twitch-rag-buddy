@@ -118,6 +118,14 @@ class Settings:
     ollama_model: str
     ollama_temperature: float
 
+    ollama_num_ctx: int
+    ollama_num_predict: int
+    ollama_top_p: float
+    ollama_repeat_penalty: float
+    ollama_force_ru: bool
+    ollama_retry_non_ru: bool
+    ollama_timeout_sec: int
+
     log_level: str
 
     @staticmethod
@@ -158,7 +166,16 @@ class Settings:
 
             ollama_url=os.getenv("OLLAMA_URL", "").strip(),
             ollama_model=os.getenv("OLLAMA_MODEL", "llama3.1:8b").strip(),
-            ollama_temperature=float(os.getenv("OLLAMA_TEMPERATURE", "0.7")),
+            ollama_temperature=float(os.getenv("OLLAMA_TEMPERATURE", "0.5")),
+
+            ollama_num_ctx=int(os.getenv("OLLAMA_NUM_CTX", "2048")),
+            ollama_num_predict=int(os.getenv("OLLAMA_NUM_PREDICT", "160")),
+            ollama_top_p=float(os.getenv("OLLAMA_TOP_P", "0.9")),
+            ollama_repeat_penalty=float(os.getenv("OLLAMA_REPEAT_PENALTY", "1.1")),
+            ollama_force_ru=_bool("OLLAMA_FORCE_RU", "true"),
+            ollama_retry_non_ru=_bool("OLLAMA_RETRY_NON_RU", "true"),
+            ollama_timeout_sec=int(os.getenv("OLLAMA_TIMEOUT_SEC", "75")),
+
 
             log_level=_env("LOG_LEVEL", "INFO"),
         )

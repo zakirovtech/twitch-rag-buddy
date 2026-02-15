@@ -13,7 +13,7 @@ services:
     container_name: twitch-gateway
     restart: unless-stopped
     volumes:
-      - ./twitch_gateway/tokens.json:/app/tokens.json:rw
+      - ./twitch_gateway:/app/state:rw
     environment:
       # Twitch IRC
       - TWITCH_NICK=${TWITCH_NICK}
